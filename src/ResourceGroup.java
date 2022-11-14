@@ -5,9 +5,6 @@ public class ResourceGroup {
     public ResourceGroup() {
         group = new HashSet<>();
     }
-    public ResourceGroup(HashSet<Resource> group) {
-        this.group = group;
-    }
 
     final private HashSet<Resource> group;
 
@@ -17,5 +14,8 @@ public class ResourceGroup {
 
     public void add(Resource resource) {
         group.add(resource);
+    }
+    public boolean contains(Resource resource) {
+        return group.contains(resource);
     }
 }

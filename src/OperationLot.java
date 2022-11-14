@@ -1,27 +1,27 @@
-import java.util.ArrayList;
+import java.util.HashSet;
 
 public class OperationLot {
 
-    public OperationLot(int startMoment, int limitMoment, int priority) {
-        lot = new ArrayList<>();
-        this.startMoment = startMoment;
-        this.limitMoment = limitMoment;
-        this.priority = priority;
-    }
-    public OperationLot(ArrayList<Operation> lot, int startMoment, int limitMoment, int priority) {
-        this.lot = lot;
-        this.startMoment = startMoment;
-        this.limitMoment = limitMoment;
+    public OperationLot(HashSet<OperationLot> allLots, int arrival, int priority) {
+        allLots.add(this);
+        lot = new HashSet<>();
+        this.arrival = arrival;
         this.priority = priority;
     }
 
-    final private ArrayList<Operation> lot;
+    final private HashSet<Operation> lot;
 
-    final private int startMoment;
-    final private int limitMoment;
+    final private int arrival;
     final private int priority;
 
-    public ArrayList<Operation> getLot() {
+    public int arrival() {
+        return arrival;
+    }
+    public int priority() {
+        return priority;
+    }
+
+    public HashSet<Operation> getLot() {
         return lot;
     }
 
