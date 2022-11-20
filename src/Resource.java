@@ -23,29 +23,31 @@ public class Resource {
     public int openTime() {
         return openTime;
     }
-    public int closeTime() {
-        return closeTime;
+
+    public boolean canAssign(Solution solution, Operation operation, Time time) {
+        return releaseTime <= time.local(this)
+                && operation.lot().arrival() <= time.global(this)
+                && !operation.resourceReceived(this)
+                && operation.precedentOperations().isEmpty()
+                && (time.local(this) + operation.duration(this) <= closeTime
+                    || operation.interruptionAllowed(this))
+                && operation.canBeAssigned(solution, this, time);
     }
 
-    public boolean canRunNow(Operation operation, Time time) {
-        int canRunAt = Math.max(releaseTime, operation.availableTime());
-        if (canRunAt <= time.local(this) && operation.precedentOperations().isEmpty())
-            if (time.local(this) + operation.duration(this) <= closeTime
-                || operation.interruptionAllowed(this))
-                return true;
-        return false;
+    private void removeSelf() {
+        allResources.remove(this);
     }
-
-    public boolean isUnused(HashSet<OperationLot> allLots) {
+    public boolean removeIfUnused(HashSet<OperationLot> allLots) {
         for (OperationLot lot : allLots)
             for (Operation operation : lot.getLot())
                 if (operation.requiredResources().contains(this) && !operation.resourceReceived(this)) {
                     return false;
                 }
+        removeSelf();
         return true;
     }
 
-    private boolean moveReleaseTime(int moveBy) {
+    private boolean wasLeapWhileMoveReleaseTime(int moveBy) {
         if (releaseTime + moveBy < closeTime) {
             releaseTime += moveBy;
             return false;
@@ -56,12 +58,9 @@ public class Resource {
             return true;
         }
     }
-
     public void assign(Operation operation, Time time) {
-        boolean wasLeap = moveReleaseTime(operation.duration(this));
         operation.receiveResource(this);
-        if (wasLeap)
+        if (wasLeapWhileMoveReleaseTime(operation.duration(this)))
             time.increase(this, openTime + time.hoursInDay() - closeTime);
     }
 }
-

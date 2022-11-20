@@ -1,5 +1,4 @@
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class Operation {
 
@@ -50,10 +49,6 @@ public class Operation {
         return resourceReceived.get(resource);
     }
 
-    public int availableTime() {
-        return availableTime;
-    }
-
     public int duration(Resource resource) {
         return duration.get(resource);
     }
@@ -79,25 +74,49 @@ public class Operation {
         precedentOperations.remove(operation);
     }
 
+    public boolean canBeAssigned(Solution solution, Resource targetResource, Time time) {
+
+        HashMap<Resource, Integer> map = solution.assignMap(this);
+        LinkedHashMap<Resource, Integer> sortedMap = new LinkedHashMap<>();
+        ArrayList<Integer> times = new ArrayList<>();
+
+        for (Map.Entry<Resource, Integer> entry : map.entrySet()) {
+            times.add(entry.getValue());
+        }
+        Collections.sort(times);
+        for (int assignTime : times)
+            for (Map.Entry<Resource, Integer> entry : map.entrySet())
+                if (entry.getValue() == assignTime)
+                    sortedMap.put(entry.getKey(), assignTime);
+
+        for (Map.Entry<Resource, Integer> entry : sortedMap.entrySet()) {
+            Resource resource = entry.getKey();
+            int startTime = entry.getValue();
+            int endTime = startTime + duration(resource);
+            int targetTime = time.global(targetResource);
+            if (targetTime < endTime)
+                if (targetTime + duration(targetResource) <= endTime)
+                    return true;
+                else
+                    return false;
+        }
+        return true;
+    }
+
     public void receiveResource(Resource resource) {
         if (!requiredResources.contains(resource))
             throw new RuntimeException("Attempt to receive un-required resource.");
         resourceReceived.put(resource, true);
-        availableTime += duration(resource);
-        removeIfDone();
+        removeSelfIfReceivedAll();
     }
 
-    private void removeIfDone() {
-        boolean done = true;
+    private void removeSelfIfReceivedAll() {
         for (Resource resource : requiredResources.getGroup())
             if (!resourceReceived(resource)) {
-                done = false;
-                break;
+                return;
             }
-        if (done) {
-            for (Operation followingOperation : followingOperations())
-                followingOperation.removePrecedentOperation(this);
-            lot.remove(this);
-        }
+        for (Operation followingOperation : followingOperations())
+            followingOperation.removePrecedentOperation(this);
+        lot.remove(this);
     }
 }

@@ -11,7 +11,19 @@ public class Solution {
                 solution.put(operation, new HashMap<>());
     }
 
+    public Solution(HashMap<Operation, HashMap<Resource, Integer>> solution) {
+        this.solution = solution;
+    }
+
     final private HashMap<Operation, HashMap<Resource, Integer>> solution;
+
+    public HashMap<Operation, HashMap<Resource, Integer>> getSolution() {
+        return solution;
+    }
+
+    public HashMap<Resource, Integer> assignMap(Operation operation) {
+        return solution.get(operation);
+    }
 
     public void fixate(Operation operation, Resource resource, Time time) {
         solution.get(operation).put(resource, time.global(resource));
@@ -29,5 +41,11 @@ public class Solution {
             }
             System.out.println("]");
         }
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        Solution evaluated = (Solution) object;
+        return solution.equals(evaluated.getSolution());
     }
 }

@@ -8,34 +8,36 @@ public class Main {
 
         HashSet<Resource> allResources = new HashSet<>();
 
-        Resource res = new Resource("1", allResources, 10, 18);
+        Resource res1 = new Resource("1", allResources, 10, 18);
+        Resource res2 = new Resource("2", allResources, 9, 15);
 
         ResourceGroup group = new ResourceGroup();
-        group.add(res);
+        group.add(res1);
+        group.add(res2);
 
 
         HashSet<OperationLot> allLots = new HashSet<>();
 
-        OperationLot lot1 = new OperationLot(allLots, 10, 0);
+        OperationLot lot1 = new OperationLot(allLots, 8, 0);
 
         Operation op11 = new Operation("11", lot1, group,
-                new HashMap<>() {{ put(res, 3); }},
-                new HashMap<>() {{ put(res, false); }});
+                new HashMap<>() {{ put(res1, 2);     put(res2, 1); }},
+                new HashMap<>() {{ put(res1, false); put(res2, false); }});
         Operation op12 = new Operation("12", lot1, group,
-                new HashMap<>() {{ put(res, 6); }},
-                new HashMap<>() {{ put(res, true); }});
+                new HashMap<>() {{ put(res1, 3);     put(res2, 3); }},
+                new HashMap<>() {{ put(res1, false); put(res2, false); }});
         Operation op13 = new Operation("13", lot1, group,
-                new HashMap<>() {{ put(res, 6); }},
-                new HashMap<>() {{ put(res, false); }});
+                new HashMap<>() {{ put(res1, 3);     put(res2, 1); }},
+                new HashMap<>() {{ put(res1, false); put(res2, false); }});
 
-        OperationLot lot2 = new OperationLot(allLots, 12, 0);
+        OperationLot lot2 = new OperationLot(allLots, 16, 0);
 
         Operation op21 = new Operation("21", lot2, group,
-                new HashMap<>() {{ put(res, 2); }},
-                new HashMap<>() {{ put(res, false); }});
+                new HashMap<>() {{ put(res1, 2);     put(res2, 2); }},
+                new HashMap<>() {{ put(res1, false); put(res2, false); }});
         Operation op22 = new Operation("22", lot2, group,
-                new HashMap<>() {{ put(res, 7); }},
-                new HashMap<>() {{ put(res, true); }});
+                new HashMap<>() {{ put(res1, 4);     put(res2, 3); }},
+                new HashMap<>() {{ put(res1, false); put(res2, false); }});
 
         op11.addFollowingOperation(op12);
         op12.addPrecedentOperation(op11);
@@ -53,15 +55,13 @@ public class Main {
             for (Resource resource : allResources) {
                 if (allOperationsDone(allLots))
                     break;
-                HashSet<Operation> front = front(allLots, resource, time);
-                if (front.isEmpty())
-                    if (resource.isUnused(allLots))
-                        allResources.remove(resource);
-                    else {
+                HashSet<Operation> front = front(solution, allLots, resource, time);
+                if (front.isEmpty()) {
+                    if (!resource.removeIfUnused(allLots)) {
                         System.out.println("Step " + step + ", time: " + time.global(resource) + ", no operation assigned");
                         time.increase(resource, 1);
                     }
-                else {
+                } else {
                     Operation currentOperation = orderByDuration(front, resource);
                     System.out.println("Step " + step + ", time: " + time.global(resource) + ", operation: " + currentOperation.name());
                     solution.fixate(currentOperation, resource, time);
@@ -71,7 +71,6 @@ public class Main {
                 step++;
             }
         }
-
         solution.print();
     }
 
@@ -82,12 +81,12 @@ public class Main {
         return true;
     }
 
-    static HashSet<Operation> front(HashSet<OperationLot> allLots, Resource resource, Time time) {
+    static HashSet<Operation> front(Solution solution, HashSet<OperationLot> allLots, Resource resource, Time time) {
         HashSet<Operation> front = new HashSet<>();
         for (OperationLot lot : allLots)
             for (Operation operation : lot.getLot())
                 if (operation.requiredResources().contains(resource) && !operation.resourceReceived(resource))
-                    if (resource.canRunNow(operation, time))
+                    if (resource.canAssign(solution, operation, time))
                         front.add(operation);
         return front;
     }
