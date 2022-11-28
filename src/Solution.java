@@ -1,12 +1,11 @@
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 public class Solution {
 
-    public Solution(HashSet<OperationLot> allLots) {
+    public Solution() {
         solution = new HashMap<>();
-        for (OperationLot lot : allLots)
+        for (OperationLot lot : LotManager.allLots)
             for (Operation operation : lot.getLot())
                 solution.put(operation, new HashMap<>());
     }
@@ -21,7 +20,7 @@ public class Solution {
         return solution;
     }
 
-    public HashMap<Resource, Integer> assignMap(Operation operation) {
+    public HashMap<Resource, Integer> assignmentMap(Operation operation) {
         return solution.get(operation);
     }
 
@@ -45,6 +44,8 @@ public class Solution {
 
     @Override
     public boolean equals(Object object) {
+        if (getClass() != object.getClass())
+            return false;
         Solution evaluated = (Solution) object;
         return solution.equals(evaluated.getSolution());
     }

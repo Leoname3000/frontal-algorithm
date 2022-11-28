@@ -11,20 +11,27 @@ public class FrontalAlgorithm {
 
     public static Solution run(HashSet<OperationLot> allLots, HashSet<Resource> allResources, Time time) {
 
-        Solution solution = new Solution(allLots);
-
-        HashSet<Front> allFronts = new HashSet<>();
-        for (Resource resource : allResources)
-            allFronts.add(new Front(allFronts, allLots, resource, time));
+        LotManager.allLots = allLots;
+        ResourceManager.allResources = allResources;
+        FrontManager.generateAllFronts(time);
+        Solution solution = new Solution();
 
         while (!allOperationsDone(allLots))
-            for (Front front : allFronts) {
+            for (Front front : FrontManager.allFronts) {
                 if (allOperationsDone(allLots))
                     break;
-                front.form(solution);
+                front.update(solution);
                 System.out.println(front);
-                if (!front.checkIfEmpty())
-                    front.pickByDuration(solution);
+                if (FrontManager.frontIsEmpty(front))
+                    if (ResourceManager.resourceIsUnused(front.resource()))
+                        FrontManager.removeFront(front);
+                    else
+                        time.increase(front.resource(), 1);
+                else {
+                    Operation bestOperation = front.chooseByDuration();
+                    AssignManager.assign(solution, bestOperation, front.resource(), time);
+                }
+
             }
         return solution;
     }

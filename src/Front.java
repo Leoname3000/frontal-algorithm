@@ -2,17 +2,11 @@ import java.util.HashSet;
 
 public class Front {
 
-    public Front(HashSet<Front> allFronts, HashSet<OperationLot> allLots, Resource resource, Time time) {
-        this.allFronts = allFronts;
-        allFronts.add(this);
-        this.allLots = allLots;
+    public Front(Resource resource, Time time) {
         this.resource = resource;
         this.time = time;
         this.front = new HashSet<>();
     }
-
-    final private HashSet<Front> allFronts;
-    final private HashSet<OperationLot> allLots;
     final private Resource resource;
     final private Time time;
     final private HashSet<Operation> front;
@@ -21,38 +15,15 @@ public class Front {
         return resource;
     }
 
-    public void form(Solution solution) {
-        for (OperationLot lot : allLots)
+    public void update(Solution solution) {
+        for (OperationLot lot : LotManager.allLots)
             for (Operation operation : lot.getLot())
                 if (operation.requiredResources().contains(resource)
-                     && resource.canAssign(solution, operation, time))
+                     && AssignManager.canAssign(solution, operation, resource, time))
                         front.add(operation);
     }
 
-    private void removeSelf() {
-        allFronts.remove(this);
-    }
-
-    public boolean checkIfEmpty() {
-        if (front.isEmpty()) {
-            if (resource.removeIfUnused(allLots))
-                removeSelf();
-            else
-                time.increase(resource, 1);
-            return true;
-        }
-        else
-            return false;
-    }
-
-    private void pick(Solution solution, Operation operation) {
-        solution.fixate(operation, resource, time);
-        resource.assign(operation, time);
-        time.increase(resource, operation.duration(resource));
-        front.remove(operation);
-    }
-
-    public Operation pickByDuration(Solution solution) {
+    public Operation chooseByDuration() {
 
         if (front.isEmpty())
             throw new RuntimeException("Attempt to order empty front.");
@@ -65,9 +36,12 @@ public class Front {
                 bestOperation = operation;
                 minDuration = operation.duration(resource);
             }
+        front.remove(bestOperation);
+        return bestOperation;
+    }
 
-        pick(solution, bestOperation);
-     git   return bestOperation;
+    public boolean isEmpty() {
+        return front.isEmpty();
     }
 
     @Override

@@ -10,14 +10,12 @@ public class Operation {
     {
         this.name = name;
         this.lot = lot;
-        lot.add(this);
 
         this.requiredResources = requiredResources;
         this.resourceReceived = new HashMap<>();
         for (Resource resource : requiredResources.getGroup())
             resourceReceived.put(resource, false);
 
-        this.availableTime = lot.arrival();
         this.duration = duration;
         this.interruptionAllowed = interruptionAllowed;
     }
@@ -27,7 +25,6 @@ public class Operation {
     final private ResourceGroup requiredResources;
     final private HashMap<Resource, Boolean> resourceReceived;
 
-    private int availableTime;
     final private HashMap<Resource, Integer> duration;
     final private HashMap<Resource, Boolean> interruptionAllowed;
 
@@ -40,6 +37,7 @@ public class Operation {
     public OperationLot lot() {
         return lot;
     }
+
     public ResourceGroup requiredResources() {
         return requiredResources;
     }
@@ -50,10 +48,13 @@ public class Operation {
     }
 
     public int duration(Resource resource) {
+        if (!requiredResources.contains(resource))
+            throw new RuntimeException("Attempt to get data for un-required resource.");
         return duration.get(resource);
     }
-
     public boolean interruptionAllowed(Resource resource) {
+        if (!requiredResources.contains(resource))
+            throw new RuntimeException("Attempt to get data for un-required resource.");
         return interruptionAllowed.get(resource);
     }
 
@@ -70,13 +71,13 @@ public class Operation {
     public void addFollowingOperation(Operation operation) {
         followingOperations.add(operation);
     }
-    private void removePrecedentOperation(Operation operation) {
+    public void removePrecedentOperation(Operation operation) {
         precedentOperations.remove(operation);
     }
 
     public boolean canBeAssigned(Solution solution, Resource targetResource, Time time) {
 
-        HashMap<Resource, Integer> map = solution.assignMap(this);
+        HashMap<Resource, Integer> map = solution.assignmentMap(this);
         LinkedHashMap<Resource, Integer> sortedMap = new LinkedHashMap<>();
         ArrayList<Integer> times = new ArrayList<>();
 
@@ -103,20 +104,9 @@ public class Operation {
         return true;
     }
 
-    public void receiveResource(Resource resource) {
+    public void markResourceAsReceived(Resource resource) {
         if (!requiredResources.contains(resource))
             throw new RuntimeException("Attempt to receive un-required resource.");
         resourceReceived.put(resource, true);
-        removeSelfIfReceivedAll();
-    }
-
-    private void removeSelfIfReceivedAll() {
-        for (Resource resource : requiredResources.getGroup())
-            if (!resourceReceived(resource)) {
-                return;
-            }
-        for (Operation followingOperation : followingOperations())
-            followingOperation.removePrecedentOperation(this);
-        lot.remove(this);
     }
 }

@@ -1,63 +1,56 @@
 import java.util.HashMap;
 import java.util.HashSet;
 
-
 public class Main {
     public static void main(String[] args) {
 
-
-        HashSet<Resource> allResources = new HashSet<>();
-
-        Resource res1 = new Resource("1", allResources, 10, 18);
-        Resource res2 = new Resource("2", allResources, 9, 15);
+        Resource res1 = ResourceManager.createResource("1", 10, 18);
+        Resource res2 = ResourceManager.createResource("2", 9, 15);
 
         ResourceGroup group = new ResourceGroup();
         group.add(res1);
         group.add(res2);
 
 
-        HashSet<OperationLot> allLots = new HashSet<>();
+        OperationLot lot1 = LotManager.createLot(8, 0);
 
-        OperationLot lot1 = new OperationLot(allLots, 8, 0);
-
-        Operation op11 = new Operation("11", lot1, group,
+        Operation op11 = OperationManager.createOperation("11", lot1, group,
                 new HashMap<>() {{ put(res1, 2);     put(res2, 1); }},
                 new HashMap<>() {{ put(res1, false); put(res2, false); }});
-        Operation op12 = new Operation("12", lot1, group,
+        Operation op12 = OperationManager.createOperation("12", lot1, group,
                 new HashMap<>() {{ put(res1, 3);     put(res2, 3); }},
                 new HashMap<>() {{ put(res1, false); put(res2, false); }});
-        Operation op13 = new Operation("13", lot1, group,
+        Operation op13 = OperationManager.createOperation("13", lot1, group,
                 new HashMap<>() {{ put(res1, 3);     put(res2, 1); }},
                 new HashMap<>() {{ put(res1, false); put(res2, false); }});
 
-        OperationLot lot2 = new OperationLot(allLots, 16, 0);
+        OperationLot lot2 = LotManager.createLot(16, 0);
 
-        Operation op21 = new Operation("21", lot2, group,
+        Operation op21 = OperationManager.createOperation("21", lot2, group,
                 new HashMap<>() {{ put(res1, 2);     put(res2, 2); }},
                 new HashMap<>() {{ put(res1, false); put(res2, false); }});
-        Operation op22 = new Operation("22", lot2, group,
+        Operation op22 = OperationManager.createOperation("22", lot2, group,
                 new HashMap<>() {{ put(res1, 4);     put(res2, 3); }},
                 new HashMap<>() {{ put(res1, false); put(res2, false); }});
 
-        op11.addFollowingOperation(op12);
-        op12.addPrecedentOperation(op11);
-        op12.addFollowingOperation(op13);
-        op13.addPrecedentOperation(op12);
-        op21.addFollowingOperation(op22);
-        op22.addPrecedentOperation(op21);
+        OperationManager.addRelation(op11, op12);
+        OperationManager.addRelation(op12, op13);
+        OperationManager.addRelation(op21, op22);
 
 
-        Time time = new Time(allResources, 24);
-        Solution solution = new Solution(allLots);
+        Time time = new Time(ResourceManager.allResources, 24);
+        Solution solution = new Solution();
         int step = 0;
 
-        while (!allOperationsDone(allLots)) {
-            for (Resource resource : allResources) {
-                if (allOperationsDone(allLots))
+        while (!allOperationsDone(LotManager.allLots)) {
+            for (Resource resource : ResourceManager.allResources) {
+                if (allOperationsDone(LotManager.allLots))
                     break;
-                HashSet<Operation> front = front(solution, allLots, resource, time);
+                HashSet<Operation> front = front(solution, LotManager.allLots, resource, time);
                 if (front.isEmpty()) {
-                    if (!resource.removeIfUnused(allLots)) {
+                    if (ResourceManager.resourceIsUnused(resource)) {
+                        ResourceManager.removeResource(resource);
+                    } else {
                         System.out.println("Step " + step + ", time: " + time.global(resource) + ", no operation assigned");
                         time.increase(resource, 1);
                     }
@@ -65,7 +58,7 @@ public class Main {
                     Operation currentOperation = orderByDuration(front, resource);
                     System.out.println("Step " + step + ", time: " + time.global(resource) + ", operation: " + currentOperation.name());
                     solution.fixate(currentOperation, resource, time);
-                    resource.assign(currentOperation, time);
+                    AssignManager.assign(solution, currentOperation, resource, time);
                     time.increase(resource, currentOperation.duration(resource));
                 }
                 step++;
@@ -86,7 +79,7 @@ public class Main {
         for (OperationLot lot : allLots)
             for (Operation operation : lot.getLot())
                 if (operation.requiredResources().contains(resource) && !operation.resourceReceived(resource))
-                    if (resource.canAssign(solution, operation, time))
+                    if (AssignManager.canAssign(solution, operation, resource, time))
                         front.add(operation);
         return front;
     }

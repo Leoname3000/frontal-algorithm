@@ -2,55 +2,47 @@ import org.junit.Test;
 import org.junit.Assert;
 
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class OneResourceTest {
     @Test
     public void oneResourceTest() {
 
-        HashSet<Resource> allResources = new HashSet<>();
-
-        Resource res = new Resource("1", allResources, 10, 18);
+        Resource res = ResourceManager.createResource("1", 10, 18);
 
         ResourceGroup group = new ResourceGroup();
         group.add(res);
 
 
-        HashSet<OperationLot> allLots = new HashSet<>();
+        OperationLot lot1 = LotManager.createLot(10, 0);
 
-        OperationLot lot1 = new OperationLot(allLots, 10, 0);
-
-        Operation op11 = new Operation("11", lot1, group,
+        Operation op11 = OperationManager.createOperation("11", lot1, group,
                 new HashMap<>() {{ put(res, 3); }},
                 new HashMap<>() {{ put(res, false); }});
-        Operation op12 = new Operation("12", lot1, group,
+        Operation op12 = OperationManager.createOperation("12", lot1, group,
                 new HashMap<>() {{ put(res, 6); }},
                 new HashMap<>() {{ put(res, true); }});
-        Operation op13 = new Operation("13", lot1, group,
+        Operation op13 = OperationManager.createOperation("13", lot1, group,
                 new HashMap<>() {{ put(res, 6); }},
                 new HashMap<>() {{ put(res, false); }});
 
-        OperationLot lot2 = new OperationLot(allLots, 12, 0);
+        OperationLot lot2 = LotManager.createLot(12, 0);
 
-        Operation op21 = new Operation("21", lot2, group,
+        Operation op21 = OperationManager.createOperation("21", lot2, group,
                 new HashMap<>() {{ put(res, 2); }},
                 new HashMap<>() {{ put(res, false); }});
-        Operation op22 = new Operation("22", lot2, group,
+        Operation op22 = OperationManager.createOperation("22", lot2, group,
                 new HashMap<>() {{ put(res, 7); }},
                 new HashMap<>() {{ put(res, true); }});
 
-        op11.addFollowingOperation(op12);
-        op12.addPrecedentOperation(op11);
-        op12.addFollowingOperation(op13);
-        op13.addPrecedentOperation(op12);
-        op21.addFollowingOperation(op22);
-        op22.addPrecedentOperation(op21);
+        OperationManager.addRelation(op11, op12);
+        OperationManager.addRelation(op12, op13);
+        OperationManager.addRelation(op21, op22);
 
 
-        Time time = new Time(allResources, 24);
+        Time time = new Time(ResourceManager.allResources, 24);
 
 
-        Solution calculatedSolution = FrontalAlgorithm.run(allLots, allResources, time);
+        Solution calculatedSolution = FrontalAlgorithm.run(LotManager.allLots, ResourceManager.allResources, time);
 
         Solution expectedSolution = new Solution(new HashMap<>() {{ put(op11, new HashMap<>() {{ put(res, 10); }});
                                                                     put(op12, new HashMap<>() {{ put(res, 15); }});
